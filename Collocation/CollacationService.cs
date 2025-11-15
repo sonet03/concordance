@@ -1,9 +1,9 @@
 using Lemmatizer;
 using NlpKwic.Components.Models;
 
-namespace NlpKwic.Components.Services;
+namespace Collocation;
 
-public class CollocationService(ILemmatizerService lemmatizer)
+public class CollocationService(ILemmatizerService lemmatizer, IStopWordService stopWordService)
 {
     public CollocationAnalysis GenerateCollocations(List<ConcordanceResult> results, int topN = 5)
     {
@@ -36,6 +36,7 @@ public class CollocationService(ILemmatizerService lemmatizer)
                 Count = group.Count(), 
                 Lemma = lemmatizer.Lemmatize(group.Key) 
             })
+            .Where(item => !stopWordService.IsStopword(item.Lemma))
             .GroupBy(item => item.Lemma)
             .Select(lemmaGroup => new CollocationItem(
                 lemmaGroup.Key,
