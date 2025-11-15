@@ -1,0 +1,73 @@
+﻿@page "/"
+@rendermode InteractiveServer
+@using NlpKwic.Components.Models
+@using NlpKwic.Components.Services
+@inject ConcordanceService ConcordanceCalculator 
+
+<h3>Програма конкордансу (X-1, X, X+1)</h3>
+<p>Введіть текст та словоформу, яку потрібно знайти, щоб побачити її оточення.</p>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="form-group">
+            <label for="textInput">Вхідний текст:</label>
+            <InputTextArea @bind-Value="_textInput" id="textInput" class="form-control" rows="15" />
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="form-group">
+            <label for="targetWord">Шукана словоформа (X):</label>
+            <InputText @bind-Value="_targetWord" id="targetWord" class="form-control" />
+        </div>
+        <button class="btn btn-primary mt-3" @onclick="ProcessText">Знайти оточення</button>
+    </div>
+</div>
+
+<hr />
+
+@* Блок відображення результатів не змінився *@
+@if (_results.Any())
+{
+    <h4>Результати пошуку для: "@_targetWord"</h4>
+    <table class="table table-striped table-bordered">
+        <thead class="thead-dark">
+            <tr>
+                <th style="width: 40%;">Ліве оточення (X-1)</th>
+                <th style="width: 20%; background-color: #ffc;">Ключове слово (X)</th>
+                <th style="width: 40%;">Праве оточення (X+1)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var result in _results)
+            {
+                <tr>
+                    <td style="text-align: right; padding-right: 15px;">@result.Left</td>
+                    <td style="font-weight: bold; text-align: center; background-color: #fff9d7;">@result.Middle</td>
+                    <td style="padding-left: 15px;">@result.Right</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else if (_isProcessed && !_results.Any())
+{
+    <div class="alert alert-warning">
+        Словоформу "@_targetWord" не знайдено у тексті.
+    </div>
+}
+
+
+@code {
+    private string _textInput = "";
+    private string _targetWord = "";
+    
+    private List<ConcordanceResult> _results = new();
+    private bool _isProcessed;
+
+    private void ProcessText()
+    {
+        _isProcessed = true;
+        
+        _results = ConcordanceCalculator.GenerateConcordance(_textInput, _targetWord);
+    }
+}

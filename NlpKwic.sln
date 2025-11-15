@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NlpKwic", "NlpKwic\NlpKwic.csproj", "{3DF18BB5-DBBF-45FA-9BEA-FA4D5D5E3336}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lemmatizer", "Lemmatizer\Lemmatizer.csproj", "{880706B1-9530-45EF-B709-8D45C7CD55DA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LemmasDictionaryBuilder", "LemmasDictionaryBuilder\LemmasDictionaryBuilder.csproj", "{A871BC22-7E50-4487-A257-04DEA9725F01}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3DF18BB5-DBBF-45FA-9BEA-FA4D5D5E3336}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3DF18BB5-DBBF-45FA-9BEA-FA4D5D5E3336}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3DF18BB5-DBBF-45FA-9BEA-FA4D5D5E3336}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3DF18BB5-DBBF-45FA-9BEA-FA4D5D5E3336}.Release|Any CPU.Build.0 = Release|Any CPU
+		{880706B1-9530-45EF-B709-8D45C7CD55DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{880706B1-9530-45EF-B709-8D45C7CD55DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{880706B1-9530-45EF-B709-8D45C7CD55DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{880706B1-9530-45EF-B709-8D45C7CD55DA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A871BC22-7E50-4487-A257-04DEA9725F01}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A871BC22-7E50-4487-A257-04DEA9725F01}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A871BC22-7E50-4487-A257-04DEA9725F01}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A871BC22-7E50-4487-A257-04DEA9725F01}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
