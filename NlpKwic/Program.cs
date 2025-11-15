@@ -8,8 +8,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+builder.Services.AddHttpClient();
+
 builder.Services.AddScoped<ILemmatizerService, LemmatizerService>();
 builder.Services.AddScoped<ConcordanceService>();
+builder.Services.AddScoped<WebpageTextExtractorService>();
 
 var app = builder.Build();
 
