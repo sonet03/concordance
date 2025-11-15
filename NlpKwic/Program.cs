@@ -10,6 +10,7 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddScoped<ILemmatizerService, LemmatizerService>();
 builder.Services.AddScoped<ConcordanceService>();
+builder.Services.AddScoped<CollocationService>();
 
 var app = builder.Build();
 

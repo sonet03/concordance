@@ -2,57 +2,156 @@
 @rendermode InteractiveServer
 @using NlpKwic.Components.Models
 @using NlpKwic.Components.Services
-@inject ConcordanceService ConcordanceCalculator 
+@inject ConcordanceService ConcordanceCalculator
+@inject CollocationService CollocationAnalyzer
 
-<h3>Програма конкордансу (X-1, X, X+1)</h3>
-<p>Введіть текст та словоформу, яку потрібно знайти, щоб побачити її оточення.</p>
+<h3>🔎 Програма конкордансу та аналізу тексту</h3>
+<br>
 
 <div class="row">
     <div class="col-md-6">
         <div class="form-group">
-            <label for="textInput">Вхідний текст:</label>
+            <label for="textInput"><strong>Крок 1:</strong> Введіть або завантажте текст</label>
             <InputTextArea @bind-Value="_textInput" id="textInput" class="form-control" rows="15" />
         </div>
     </div>
     <div class="col-md-6">
         <div class="form-group">
-            <label for="targetWord">Шукана словоформа (X):</label>
+            <label for="targetWord"><strong>Крок 2:</strong> Введіть словоформу для пошуку</label>
             <InputText @bind-Value="_targetWord" id="targetWord" class="form-control" />
         </div>
-        <button class="btn btn-primary mt-3" @onclick="ProcessText">Знайти оточення</button>
+        
+        <button class="btn btn-primary mt-3 w-100" @onclick="ProcessText" disabled="@string.IsNullOrWhiteSpace(_textInput)">
+            Знайти оточення
+        </button>
     </div>
 </div>
 
 <hr />
 
-@* Блок відображення результатів не змінився *@
-@if (_results.Any())
-{
-    <h4>Результати пошуку для: "@_targetWord"</h4>
-    <table class="table table-striped table-bordered">
-        <thead class="thead-dark">
-            <tr>
-                <th style="width: 40%;">Ліве оточення (X-1)</th>
-                <th style="width: 20%; background-color: #ffc;">Ключове слово (X)</th>
-                <th style="width: 40%;">Праве оточення (X+1)</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var result in _results)
-            {
-                <tr>
-                    <td style="text-align: right; padding-right: 15px;">@result.Left</td>
-                    <td style="font-weight: bold; text-align: center; background-color: #fff9d7;">@result.Middle</td>
-                    <td style="padding-left: 15px;">@result.Right</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
-else if (_isProcessed && !_results.Any())
+<style>
+    .highlighted-text-area {
+        background-color: #f8f9fa;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        padding: 0.75rem;
+        font-family: monospace;
+        white-space: pre-wrap; /* Зберігає \n як переноси рядків */
+        word-wrap: break-word;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    .highlighted-text-area mark {
+        padding: 2px 0;
+        border-radius: 3px;
+    }
+    .ctx-left { background-color: #cce5ff; color: #004085; } /* Синій */
+    .ctx-middle { background-color: #fff3cd; color: #856404; font-weight: bold; } /* Жовтий */
+    .ctx-right { background-color: #d4edda; color: #155724; } /* Зелений */
+</style>
+
+
+@if (_isProcessed && !_results.Any())
 {
     <div class="alert alert-warning">
         Словоформу "@_targetWord" не знайдено у тексті.
+    </div>
+}
+else if (_results.Any())
+{
+    <h4>📚 Результати пошуку (@_results.Count знайдено):</h4>
+    <br>
+
+    <div class="btn-group mb-3" role="group">
+        <button type="button" class="btn @(!_showTableView ? "btn-primary" : "btn-outline-primary")"
+                @onclick="() => _showTableView = false">
+            📜 Вигляд тексту
+        </button>
+        <button type="button" class="btn @(_showTableView ? "btn-primary" : "btn-outline-primary")"
+                @onclick="() => _showTableView = true">
+            📊 Вигляд таблиці
+        </button>
+    </div>
+
+    @if (_showTableView)
+    {
+        <div class="highlighted-text-area" style="white-space: normal;">
+            <table class="table table-sm table-hover" style="font-family: monospace;">
+                <thead>
+                    <tr>
+                        <th style="width: 40%; text-align: right;">Ліворуч (X-1)</th>
+                        <th style="width: 20%; text-align: center;">Ключове (X)</th>
+                        <th style="width: 40%;">Праворуч (X+1)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var result in _results)
+                    {
+                        <tr>
+                            <td style="text-align: right; color: #004085;">@(result.Left ?? "--- [ПОЧАТОК РЕЧЕННЯ] ---")</td>
+                            <td style="text-align: center; background-color: #fff3cd; font-weight: bold; color: #856404;">@result.Middle</td>
+                            <td style="color: #155724;">@(result.Right ?? "--- [КІНЕЦЬ РЕЧЕННЯ] ---")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="highlighted-text-area">
+            @foreach (var sentence in _highlightedSentences)
+            {
+                @foreach (var token in sentence.Tokens)
+                {
+                    if (string.IsNullOrEmpty(token.CssClass))
+                    {
+                        @token.Text
+                    }
+                    else
+                    {
+                        <mark class="@token.CssClass">@token.Text</mark>
+                    }
+                }
+            }
+        </div>
+    }
+    
+    <h4 class="mt-5">📊 Аналіз колокацій (Top-5)</h4>
+    <br>
+    <div class="row">
+        <div class="col-md-6">
+            <h5>Найчастіші леми ліворуч (X-1)</h5>
+            <ul class="list-group">
+                @foreach (var item in _leftCollocations)
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        @item.Word
+                        <span class="badge bg-primary rounded-pill">@item.Count</span>
+                    </li>
+                }
+                @if (!_leftCollocations.Any())
+                {
+                    <li class="list-group-item text-muted">Немає даних для аналізу</li>
+                }
+            </ul>
+        </div>
+        <div class="col-md-6">
+            <h5>Найчастіші леми праворуч (X+1)</h5>
+            <ul class="list-group">
+                @foreach (var item in _rightCollocations)
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        @item.Word
+                        <span class="badge bg-primary rounded-pill">@item.Count</span>
+                    </li>
+                }
+                 @if (!_rightCollocations.Any())
+                {
+                    <li class="list-group-item text-muted">Немає даних для аналізу</li>
+                }
+            </ul>
+        </div>
     </div>
 }
 
@@ -61,13 +160,33 @@ else if (_isProcessed && !_results.Any())
     private string _textInput = "";
     private string _targetWord = "";
     
+    private bool _isProcessed = false;
+    private bool _showTableView = false;
+    
     private List<ConcordanceResult> _results = new();
-    private bool _isProcessed;
-
+    private List<HighlightedSentence> _highlightedSentences = new();
+    private List<CollocationItem> _rightCollocations = new();
+    private List<CollocationItem> _leftCollocations = new();
+    
     private void ProcessText()
     {
+        if (string.IsNullOrWhiteSpace(_textInput) || string.IsNullOrWhiteSpace(_targetWord)) return;
+
         _isProcessed = true;
+
+        var analysis = ConcordanceCalculator.AnalyzeText(_textInput, _targetWord);
         
-        _results = ConcordanceCalculator.GenerateConcordance(_textInput, _targetWord);
+        _results = analysis.Results;
+        _highlightedSentences = analysis.HighlightedSentences;
+        
+        _leftCollocations.Clear();
+        _rightCollocations.Clear();
+        
+        if (_results.Any())
+        {
+            var collocationData = CollocationAnalyzer.GenerateCollocations(_results);
+            _leftCollocations = collocationData.LeftCollocations;
+            _rightCollocations = collocationData.RightCollocations;
+        }
     }
 }
