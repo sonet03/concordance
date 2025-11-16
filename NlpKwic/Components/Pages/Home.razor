@@ -11,9 +11,33 @@
 
 <div class="row">
     <div class="col-md-6">
-        <div class="form-group">
-            <label for="textInput"><strong>Крок 1:</strong> Введіть або завантажте текст</label>
-            <InputTextArea @bind-Value="_textInput" id="textInput" class="form-control" rows="15" />
+        <label class="form-label"><strong>Крок 1:</strong> Додайте текст</label>
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link @(_activeTab == InputMode.Manual ? "active" : "")" 
+                        @onclick="() => _activeTab = InputMode.Manual">Ввести вручну</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link @(_activeTab == InputMode.Upload ? "active" : "")" 
+                        @onclick="() => _activeTab = InputMode.Upload">Завантажити файл</button>
+            </li>
+        </ul>
+    
+        <div class="tab-content border border-top-0 p-3" id="myTabContent">
+            <div class="tab-pane fade @(_activeTab == InputMode.Manual ? "show active" : "")" role="tabpanel">
+                <InputTextArea @bind-Value="_textInput" class="form-control" rows="13" />
+            </div>
+        
+            <div class="tab-pane fade @(_activeTab == InputMode.Upload ? "show active" : "")" role="tabpanel">
+                <label for="fileInput" class="form-label">Оберіть текстовий файл (.txt)</label>
+                <InputFile id="fileInput" class="form-control" OnChange="HandleFileSelected" accept=".txt" />
+                @if (!string.IsNullOrEmpty(_fileName))
+                {
+                    <div class="alert alert-info mt-2 mb-0">
+                        <strong>Завантажено:</strong> @_fileName (@_fileSize bytes)
+                    </div>
+                }
+            </div>
         </div>
     </div>
     <div class="col-md-6">
@@ -37,7 +61,7 @@
         border-radius: 0.25rem;
         padding: 0.75rem;
         font-family: monospace;
-        white-space: pre-wrap; /* Зберігає \n як переноси рядків */
+        white-space: pre-wrap;
         word-wrap: break-word;
         max-height: 400px;
         overflow-y: auto;
@@ -158,16 +182,59 @@ else if (_results.Any())
 
 
 @code {
+    private enum InputMode { Manual, Upload }
+    
     private string _textInput = "";
     private string _targetWord = "";
     
     private bool _isProcessed = false;
     private bool _showTableView = false;
     
+    private InputMode _activeTab = InputMode.Manual;
+
+    private string _fileName = "";
+    private long _fileSize = 0;
+    
     private List<ConcordanceResult> _results = new();
     private List<HighlightedSentence> _highlightedSentences = new();
     private List<CollocationItem> _rightCollocations = new();
     private List<CollocationItem> _leftCollocations = new();
+    
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        ClearResults();
+        _textInput = "";
+        
+        var file = e.File;
+        if (file == null)
+        {
+            _fileName = "Error: File not found.";
+            return;
+        }
+
+        long maxFileSize = 10 * 1024 * 1024;
+        if (file.Size > maxFileSize)
+        {
+            _fileName = $"Error: File is too large (max {maxFileSize} bytes).";
+            return;
+        }
+
+        try
+        {
+            _fileName = file.Name;
+            _fileSize = file.Size;
+
+            using var streamReader = new StreamReader(file.OpenReadStream(maxFileSize));
+            _textInput = await streamReader.ReadToEndAsync();
+            
+            _activeTab = InputMode.Manual;
+        }
+        catch (Exception ex)
+        {
+            _fileName = $"Error reading file: {ex.Message}";
+            _textInput = "";
+        }
+    }
     
     private void ProcessText()
     {
@@ -180,14 +247,20 @@ else if (_results.Any())
         _results = analysis.Results;
         _highlightedSentences = analysis.HighlightedSentences;
         
-        _leftCollocations.Clear();
-        _rightCollocations.Clear();
-        
         if (_results.Any())
         {
             var collocationData = CollocationAnalyzer.GenerateCollocations(_results);
             _leftCollocations = collocationData.LeftCollocations;
             _rightCollocations = collocationData.RightCollocations;
         }
+    }
+    
+    private void ClearResults()
+    {
+        _isProcessed = false;
+        _results.Clear();
+        _highlightedSentences.Clear();
+        _leftCollocations.Clear();
+        _rightCollocations.Clear();
     }
 }
